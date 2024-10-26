@@ -1,20 +1,22 @@
 from flask import Flask, request, jsonify, Response
 from markupsafe import escape
 
-app = Flask(__name__)
-root = None # root item
+
 
 class item:
     def __init__(self, url, text):
         self.url = url
         self.text = text
+        self.count = 0
         self.children = []
 
-    def add_child(self, index,child):
-        self.children.insert(index, child) # insert child at index
+    def add_child(self,child):
+        self.children.append(child) # insert child at the end
+        self.count += 1
 
     def remove_child(self, index):  # index = number - 1
         self.children.pop(index) # remove child at index
+        self.count -= 1
 
     def update_child(self, index, child):
         self.children[index] = child
@@ -25,6 +27,9 @@ class item:
             'text': self.text,
             'children': [child.url for child in self.children]
         }
+    
+app = Flask(__name__)
+root = item('/outline/', 'root') # root item
     
 @app.route('/', methods=['GET'])
 def home():
@@ -50,16 +55,22 @@ def favicon():
     with open('favicon.ico', 'rb') as f:
         return Response(f.read(), mimetype='image/x-icon')
 
+########
+# API #
 @app.route('/outline/', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def outline(request):
-
-    if request.method == 'POST' and root is None: # create a root item
-        root = item('/outline/', request.data['text'])
+def outline():
+    global root
+    if request.method == 'POST': # create a root item
+        if root is None:
+            root = item('/outline/', request.json['text'])
+        else:
+            child = item(f'/outline/{root.count}', request.json['text'])
+            root.add_child(child)
         return jsonify(root.to_dict())
     elif request.method == 'GET':       # get the root item
         return jsonify(root.to_dict())
     elif request.method == 'PUT':
-        root.text = request.data['text']
+        root.text = request.json['text']
         return jsonify(root.to_dict())
     elif request.method == 'DELETE':
         root = None
@@ -70,7 +81,32 @@ def outline(request):
     return jsonify(root.to_dict())
 
 @app.route('/outline/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def outlineId(request,subpath):
+def outlineId(subpath):
     parts = subpath.split('/')
+    current = root
+    parent = None  # we need to save parent reference to delete a child as we cannot go one step back in the tree
+    childIndex = -1 # index of the child in the parent to be deleted
+    for part in parts:
+        if part == '' or part == 'outline' or not part.isnumeric():
+            continue
+        index = int(part) 
+        if index < 0 or index > current.count-1:
+            return jsonify({'error': f'Invalid index {index} {current.count}'})
+        if request.method == 'DELETE':
+            parent = current
+            childIndex = index
+        current = current.children[index]
+    if request.method == 'POST':
+        child = item(f'/outline/{subpath}/{current.count}', request.json['text'])
+        current.add_child(child)
+        return jsonify(current.to_dict())
+    elif request.method == 'GET':
+        return jsonify(current.to_dict())
+    elif request.method == 'PUT':
+        current.text = request.json['text']
+        return jsonify(current.to_dict())
+    elif request.method == 'DELETE':
+        parent.remove_child(childIndex)
+        return jsonify(current.to_dict())
     
     return f'Subpath {escape(subpath)}'
