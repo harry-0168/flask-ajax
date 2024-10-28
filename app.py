@@ -72,9 +72,6 @@ def outline():
     elif request.method == 'PUT':
         root.text = request.json['text']
         return jsonify(root.to_dict())
-    elif request.method == 'DELETE':
-        root = None
-        return jsonify({})
     
 
 
@@ -110,3 +107,6 @@ def outlineId(subpath):
         return jsonify(current.to_dict())
     
     return f'Subpath {escape(subpath)}'
+
+if __name__ == '__main__':
+    app.run(debug=True)
