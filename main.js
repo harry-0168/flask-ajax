@@ -56,37 +56,7 @@ async function render(parent, data) {
     li.appendChild(element);
     parent.appendChild(li);
     console.log(data.children);
-    // if (data.children.length === 0) {  // If no children, return early
-    //     // put the add button and delete button in a div
-    //     // Add an "Add" button for adding children
-    //     let addButton = document.createElement('button');
-    //     addButton.textContent = 'Add';
-    //     addButton.classList.add('add', data.url+'button');
-    //     // Attach event to POST a new child item
-    //     addButton.addEventListener('click', function () {
-    //         makeRequest(data.url, 'POST', { "text": "click to edit" }, false);
-    //     });
-    //     parent.appendChild(addButton);
-    //     // Add a "Delete" button for deleting the current item
-    //     let deleteButton = document.createElement('button');
-    //     deleteButton.textContent = 'Delete';
-    //     deleteButton.classList.add('delete', data.url+'button');
-
-    //     // Attach event to DELETE the current item
-    //     if (data.url !== '/outline/') {
-    //     deleteButton.addEventListener('click', function () {
-    //         makeRequest(data.url, 'DELETE', {}, false);
-    //     });
-    //     parent.appendChild(deleteButton);}
-
-    //     let ul = document.createElement('ul');
-    //     ul.classList.add(data.url);
-    //     // hide the ul
-    //     ul.style.visibility = 'hidden';
-    //     parent.appendChild(ul);
-
-    //     return;
-    // }
+    
     // Add an "Add" button for adding children
     let divButton = document.createElement('div');
     divButton.classList.add('button-div');
@@ -119,7 +89,6 @@ async function render(parent, data) {
     if (data.children.length === 0) {
         return;
     }
-
     // Loop over each child and wait for makeRequest to get the data
     for (const childUrl of data.children) {
         // Wait for makeRequest to fetch the child data before calling render on it
@@ -129,9 +98,7 @@ async function render(parent, data) {
         await render(ul, childData); // Recursively render each child
     }
 
-    
 }
-
 
 async function makeRequest(url,method= 'GET', body={}, initializePage=false) {
     if (method === 'GET') {
@@ -219,19 +186,12 @@ async function poll() {
             if (!pageData[url]) {
                 // Render new item and add it to pageData
 
-                
                 let parentUrl = url.substring(0, url.lastIndexOf('/'));
                 if(parentUrl === '/outline'){
                     parentUrl = '/outline/';
                 }
                 let parentUls = document.querySelectorAll(`ul.${CSS.escape(parentUrl)}`);
                 let parentUl = parentUls[parentUls.length -1];
-
-                // while(!parentUl){   // just incase parentUl is not created yet, but the child is encountered first
-                //     parentUrl = parentUrl.substring(0, parentUrl.lastIndexOf('/'));
-                //     parentUl = document.querySelector(`ul.${CSS.escape(parentUrl)}`);
-                    
-                // }
                 
                 if (parentUl) {
                     pageData[url] = change;
@@ -275,10 +235,7 @@ async function poll() {
 
 async function main() {
     // make fetch request to get the data for current page
-    current_page = window.location.pathname;
-    if (!current_page.startsWith('/outline')) {
-        current_page = '/outline';
-    }
+    current_page = '/outline';
     await makeRequest(current_page, 'GET', {}, true); // initialize the page
     // Poll for changes every 5 seconds once the page is initialized
     setInterval(poll, 2000);
