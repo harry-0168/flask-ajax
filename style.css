@@ -1,0 +1,101 @@
+/* Basic styling for the body */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #C88A49; /* Background color */
+    color: #000; /* Normal text color */
+}
+
+/* Container for the outline items */
+.root{
+    width: 80%;
+    max-width: 800px;
+    margin-top: 20px;
+    background-color: #CCCCF6; /* Container color */
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Styling for each outline item */
+ul{
+    margin: 15px 0px;
+    padding: 10px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #000000; /* Main line to connect parent to children */
+    border-radius: 5px;
+    list-style-type: none;
+}
+
+/* Text display for outline items */
+.editable-item {
+    font-size: 1em;
+    color: #000; /* Normal text color */
+    margin: 10px 0px;
+}
+
+/* Button container to hold buttons in a column */
+.button-container {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    align-items: flex-start; /* Align buttons to the center */
+    gap: 10px; /* Space between buttons */
+}
+
+/* Button styling */
+button {
+    padding: 5px 15px;
+    margin: 2px 5px;
+    font-size: 0.85em;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    color: white; /* Button text color */
+    transition: background-color 0.3s;
+}
+
+/* Individual button colors */
+.add {
+    background-color: #28a745; /* Green color for add button */
+}
+
+.delete {
+    background-color: #dc3545; /* Red color for delete button */
+}
+
+
+
+/* Button hover effects */
+.button:hover {
+    opacity: 0.9;
+}
+
+/* Specific hover colors for Add-Child and Delete buttons */
+.button.add-child:hover {
+    background-color: #218838; /* Darker green on hover */
+}
+
+.button.delete:hover {
+    background-color: #c82333; /* Darker red on hover */
+}
+
+/* Container for child items with vertical line */
+.children-container {
+    padding-left: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Semi-transparent styling for text when editing */
+.semi-transparent {
+    opacity: 0.5;
+}

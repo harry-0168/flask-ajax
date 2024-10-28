@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, Response
 from markupsafe import escape
+import time
 
 
 
@@ -30,6 +31,7 @@ class item:
     
 app = Flask(__name__)
 root = item('/outline/', 'root') # root item
+changes = {} # changes to the outline, key is the url of the item, value is the item attributes and the type of change(add, update, delete), timestamp
     
 @app.route('/', methods=['GET'])
 def home():
@@ -66,19 +68,21 @@ def outline():
         else:
             child = item(f'/outline/{root.count}', request.json['text'])
             root.add_child(child)
-        return jsonify(root.to_dict())
+            changes[child.url] = {'text': child.text, 'type': 'add', 'timestamp': int(time.time()), 'url': child.url, 'children': [child.url for child in child.children]}
+        return jsonify(child.to_dict())
     elif request.method == 'GET':       # get the root item
         return jsonify(root.to_dict())
     elif request.method == 'PUT':
         root.text = request.json['text']
+        changes[root.url+"put"] = {'text': root.text, 'type': 'update', 'timestamp': int(time.time()), 'url': root.url}
         return jsonify(root.to_dict())
-    
-
-
-    return jsonify(root.to_dict())
+    elif request.method == 'DELETE':
+        return jsonify({'error': 'Cannot delete root item'})
 
 @app.route('/outline/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def outlineId(subpath):
+    global root
+    global changes
     parts = subpath.split('/')
     current = root
     parent = None  # we need to save parent reference to delete a child as we cannot go one step back in the tree
@@ -96,17 +100,49 @@ def outlineId(subpath):
     if request.method == 'POST':
         child = item(f'/outline/{subpath}/{current.count}', request.json['text'])
         current.add_child(child)
-        return jsonify(current.to_dict())
+        changes[child.url] = {'text': child.text, 'type': 'add', 'timestamp': int(time.time()), 'url': child.url, 'children': [child.url for child in child.children]}
+        return jsonify(child.to_dict())
     elif request.method == 'GET':
         return jsonify(current.to_dict())
     elif request.method == 'PUT':
         current.text = request.json['text']
+        changes[current.url+"put"] = {'text': current.text, 'type': 'update', 'timestamp': int(time.time()), 'url': current.url}
         return jsonify(current.to_dict())
     elif request.method == 'DELETE':
         parent.remove_child(childIndex)
+        changes[current.url] = {'text': current.text, 'type': 'delete', 'timestamp': int(time.time()), 'url': current.url}
         return jsonify(current.to_dict())
-    
-    return f'Subpath {escape(subpath)}'
+
+
+###########
+# polling #
+
+# I want to remove the elements from the changes dictionary that are older than 10 seconds
+
+
+import threading
+
+# Function to clean up old entries in changes dictionary
+def cleanup_changes():
+    while True:
+        current_time = int(time.time())
+        # Filter out changes older than 10 seconds
+        keys_to_delete = [key for key, value in changes.items() if current_time - value['timestamp'] > 10]
+        for key in keys_to_delete:
+            print(f"Removing {key} from changes")
+            del changes[key]
+        time.sleep(5)  # Check every 5 seconds
+
+# Start cleanup thread
+cleanup_thread = threading.Thread(target=cleanup_changes, daemon=True)
+cleanup_thread.start()
+
+# Polling endpoint to get recent changes
+@app.route('/poll-changes', methods=['GET'])
+def poll_changes():
+    return jsonify(list(changes.values()))
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
